@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Temple Run: 2 Colored Coins</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+    }
+    #game {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      background: white;
+      overflow: hidden;
+      margin-top: 20px;
+      border: 4px solid #fff;
+      display: none; /* Hidden until game starts */
+    }
+    #player {
+      position: absolute;
+      bottom: 10px;
+      width: 50px;
+      height: 50px;
+      background-image: url('trek.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      left: 125px;
+      transition: left 0.2s, bottom 0.2s;
+      border-radius: 10px;
+    }
+    #obstacle {
+      position: absolute;
+      top: -50px;
+      width: 50px;
+      height: 50px;
+      background-image: url('hasina.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      left: 125px;
+      border-radius: 5px;
+    }
+    .coin {
+      position: absolute;
+      top: -50px;
+      width: 50px;
+      height: 50px;
+    }
+    #coin1 {
+      background-image: url('pole.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    #coin2 {
+      background-image: url('10.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    #controls {
+      margin-top: 20px;
+      display: none;
+    }
+    #controls button {
+      font-size: 24px;
+      padding: 10px 20px;
+      margin: 0 10px;
+      cursor: pointer;
+      background: #fff;
+      border: none;
+      border-radius: 10px;
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 18px;
+      display: none;
+    }
+    #startBtn {
+      margin-top: 30px;
+      font-size: 24px;
+      padding: 10px 20px;
+      background-color: limegreen;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Tarek: The Khamba King</h2>
+
+  <!-- 🎵 Audio elements -->
+  <audio id="gameOverSound" src="gojob.mp3" preload="auto"></audio>
+  <audio id="bgMusic" src="bgs.mp3" preload="auto" loop></audio>
+
+  <!-- Start Button -->
+  <button id="startBtn">▶️ Start Game</button>
+
+  <div id="game">
+    <div id="player"></div>
+    <div id="obstacle"></div>
+    <div class="coin" id="coin1"></div>
+    <div class="coin" id="coin2"></div>
+  </div>
+
+  <div id="controls">
+    <button style="margin-right: 100px;" onclick="moveLeft()">⬅️</button>
+    <button style="display:none" onclick="jump()">⬆️</button>
+    <button onclick="moveRight()">➡️</button>
+  </div>
+
+  <div style="display:none" id="score">Score: 0 | Coins: 0</div>
+  <h3>Collect খাম্বা & 10%</h3>
+  <h4>Keep away from Hasina</h4>
+
+  <script>
+    const player = document.getElementById("player");
+    const obstacle = document.getElementById("obstacle");
+    const coin1 = document.getElementById("coin1");
+    const coin2 = document.getElementById("coin2");
+    const scoreDisplay = document.getElementById("score");
+
+    const gameOverSound = document.getElementById("gameOverSound");
+    const bgMusic = document.getElementById("bgMusic");
+
+    const startBtn = document.getElementById("startBtn");
+    const gameArea = document.getElementById("game");
+    const controls = document.getElementById("controls");
+
+    const lanePositions = [50, 125, 200];
+    let lane = 1;
+    let jumping = false;
+    let score = 0;
+    let coins = 0;
+    let gameRunning = false;
+
+    function moveLeft() {
+      if (!gameRunning) return;
+      if (lane > 0) {
+        lane--;
+        player.style.left = lanePositions[lane] + "px";
+      }
+    }
+
+    function moveRight() {
+      if (!gameRunning) return;
+      if (lane < 2) {
+        lane++;
+        player.style.left = lanePositions[lane] + "px";
+      }
+    }
+
+    function jump() {
+      if (!gameRunning) return;
+      if (!jumping) {
+        jumping = true;
+        player.style.bottom = "100px";
+        setTimeout(() => {
+          player.style.bottom = "10px";
+          jumping = false;
+        }, 500);
+      }
+    }
+
+    function resetObstacle() {
+      obstacle.style.top = "-50px";
+      obstacle.style.left = lanePositions[Math.floor(Math.random() * 3)] + "px";
+    }
+
+    function resetCoin(coin) {
+      coin.style.top = "-50px";
+      coin.style.left = lanePositions[Math.floor(Math.random() * 3)] + "px";
+    }
+
+    function checkCollision(rect1, rect2) {
+      return !(
+        rect1.top > rect2.bottom ||
+        rect1.bottom < rect2.top ||
+        rect1.left > rect2.right ||
+        rect1.right < rect2.left
+      );
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+
+      let obsTop = parseInt(obstacle.style.top || "-50");
+      let coin1Top = parseInt(coin1.style.top || "-50");
+      let coin2Top = parseInt(coin2.style.top || "-50");
+
+      obsTop += 5;
+      coin1Top += 4;
+      coin2Top += 4;
+
+      if (obsTop > 400) {
+        resetObstacle();
+        score++;
+      } else {
+        obstacle.style.top = obsTop + "px";
+      }
+
+      if (coin1Top > 400) resetCoin(coin1);
+      else coin1.style.top = coin1Top + "px";
+
+      if (coin2Top > 400) resetCoin(coin2);
+      else coin2.style.top = coin2Top + "px";
+
+      const playerRect = player.getBoundingClientRect();
+      const obstacleRect = obstacle.getBoundingClientRect();
+      const coin1Rect = coin1.getBoundingClientRect();
+      const coin2Rect = coin2.getBoundingClientRect();
+
+      if (checkCollision(playerRect, obstacleRect) && !jumping) {
+        gameRunning = false;
+        bgMusic.pause();
+        bgMusic.currentTime = 0;
+        gameOverSound.play();
+
+        setTimeout(() => {
+          alert("💀 Game Over!");
+          score = 0;
+          coins = 0;
+          scoreDisplay.textContent = `Score: ${score} | Coins: ${coins}`;
+          resetObstacle();
+          resetCoin(coin1);
+          resetCoin(coin2);
+          gameRunning = true;
+          bgMusic.play();
+          gameLoop();
+        }, 100); // Delay to avoid audio cutoff
+        return;
+      }
+
+      if (checkCollision(playerRect, coin1Rect)) {
+        coins++;
+        resetCoin(coin1);
+      }
+
+      if (checkCollision(playerRect, coin2Rect)) {
+        coins++;
+        resetCoin(coin2);
+      }
+
+      scoreDisplay.textContent = `Score: ${score} | Coins: ${coins}`;
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start the game after user clicks Start button
+    startBtn.addEventListener("click", () => {
+      startBtn.style.display = "none";
+      gameArea.style.display = "block";
+      controls.style.display = "block";
+      scoreDisplay.style.display = "block";
+
+      resetObstacle();
+      resetCoin(coin1);
+      resetCoin(coin2);
+
+      gameRunning = true;
+      bgMusic.play().catch(() => {});
+      gameLoop();
+    });
+  </script>
+</body>
+</html>
